@@ -20,10 +20,10 @@ class Hparams:
         ################################
         # Data Parameters              #
         ################################
-        self.training_files = "DATASET/train.csv.txt"
-        self.validation_files = "DATASET/val.csv.txt"
+        self.training_files = "dataset/S0002.txt.pinyin"
+        self.validation_files = "dataset/S0002.txt.pinyin"
         self.text_cleaners = ["basic_cleaners"]
-        self.symbols_lang = "en"  # en: English characters; py: Chinese Pinyin symbols
+        self.symbols_lang = "py"  # en: English characters; py: Chinese Pinyin symbols
 
         ################################
         # Model Parameters             #
@@ -33,7 +33,7 @@ class Hparams:
 
         self.num_symbols = len(symbols(self.symbols_lang))
         self.symbols_embed_dim = 512
-        self.mel_dim = 80
+        self.mel_dim = 128
         self.r = 3
         self.max_decoder_steps = 1000
         self.stop_threshold = 0.5

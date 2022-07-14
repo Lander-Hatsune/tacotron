@@ -24,11 +24,11 @@ class TextMelDataset(torch.utils.data.Dataset):
         f_list = []
         with open(file_path, encoding = 'utf-8') as f:
             for line in f:
-                parts = line.strip().strip('\ufeff').split('|') #remove BOM
+                parts = line.strip().split(',')
                 # mel_file_path
-                path  = parts[0]
+                path = 'dataset/wavs/' + parts[0] + '.wav.npy'
                 # text
-                text  = parts[1]
+                text = parts[1].strip()
                 f_list.append([text, path])
         return f_list
 
@@ -41,7 +41,7 @@ class TextMelDataset(torch.utils.data.Dataset):
         #stored melspec: np.ndarray [shape=(T_out, num_mels)]
         melspec = torch.from_numpy(np.load(file_path))
         assert melspec.size(1) == self.mel_dim, (
-            'Mel dimension mismatch: given {}, expected {}'.format(melspec.size(0), self.mel_dim))
+            'Mel dimension mismatch: given {}, expected {}'.format(melspec.size(1), self.mel_dim))
 
         return melspec
 
