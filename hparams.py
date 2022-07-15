@@ -34,6 +34,7 @@ class Hparams:
         self.num_symbols = len(symbols(self.symbols_lang))
         self.symbols_embed_dim = 512
         self.mel_dim = 128
+        self.btnk_dim = 4335
         self.r = 3
         self.max_decoder_steps = 1000
         self.stop_threshold = 0.5
