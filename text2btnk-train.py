@@ -6,7 +6,7 @@ import json
 import torch
 from torch.utils.data import DataLoader
 
-from model.tacotron2 import Tacotron2, Tacotron2Loss
+from model.text2btnk import Tacotron2, Tacotron2Loss
 from utils.text2btnk_dataset import TextBtnkDataset, TextBtnkCollate
 from utils.logger import TacotronLogger
 from utils.utils import data_parallel_workaround
