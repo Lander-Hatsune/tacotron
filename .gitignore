@@ -1,0 +1,12 @@
+# Emacs
+*.*~
+*.bak
+
+# Python
+*venv
+*__pycache__
+
+# Log, Dataset & Output
+log/
+dataset/
+out/
