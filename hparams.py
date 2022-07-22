@@ -9,7 +9,7 @@ class Hparams:
         self.epochs = 500
         self.iters_per_checkpoint = 1000
         self.iters_per_validation = 1000
-        self.seed = 1234
+        self.seed = 814
         self.dynamic_loss_scaling = True
         self.fp16_run = False
         self.distributed_run = False
@@ -20,8 +20,8 @@ class Hparams:
         ################################
         # Data Parameters              #
         ################################
-        self.training_files = "dataset/S0002.txt.pinyin"
-        self.validation_files = "dataset/S0002.txt.pinyin"
+        self.training_files = "dataset/S0002-0020.txt.pinyin"
+        self.validation_files = "dataset/S0021.txt.pinyin"
         self.text_cleaners = ["basic_cleaners"]
         self.symbols_lang = "py"  # en: English characters; py: Chinese Pinyin symbols
 
@@ -34,7 +34,7 @@ class Hparams:
         self.num_symbols = len(symbols(self.symbols_lang))
         self.symbols_embed_dim = 512
         self.mel_dim = 128
-        self.btnk_dim = 4335
+        self.btnk_dim = 256
         self.r = 3
         self.max_decoder_steps = 1000
         self.stop_threshold = 0.5

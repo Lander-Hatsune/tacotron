@@ -25,7 +25,7 @@ class TextBtnkDataset(torch.utils.data.Dataset):
             for line in f:
                 parts = line.strip().split(',')
                 # btnk_file_path
-                path = 'dataset/btnks/' + parts[0] + '.npy'
+                path = 'dataset/btnks/' + parts[0] + '.npz'
                 # text
                 text = parts[1].strip()
                 f_list.append([text, path])
@@ -38,7 +38,7 @@ class TextBtnkDataset(torch.utils.data.Dataset):
 
     def get_btnk(self, file_path):
         # stored btnk: np.ndarray [shape=(1, T_out, btnk_dim)]
-        btnk = torch.from_numpy(np.load(file_path)).squeeze()
+        btnk = torch.from_numpy(np.load(file_path)['vec']).squeeze()
         assert btnk.size(1) == self.btnk_dim, (
             'Btnk dimension mismatch: given {}, expected {}'.format(btnk.size(1), self.btnk_dim))
 
