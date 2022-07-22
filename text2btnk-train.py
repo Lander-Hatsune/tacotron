@@ -100,7 +100,7 @@ def validate(model, criterion, iteration, device, valset, batch_size, collate_fn
 
     model.train()
     print("Validation loss {}: {:9f}  ".format(iteration, val_loss))
-    #logger.log_validation(val_loss, model, targets, predicts, iteration)
+    logger.log_validation(val_loss, model, iteration)
 
 
 def train(output_dir, log_dir, checkpoint_path, warm_start, hparams):

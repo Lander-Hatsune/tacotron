@@ -15,20 +15,20 @@ class TacotronLogger(SummaryWriter):
         self.add_scalar("learning.rate", learning_rate, iteration)
         self.add_scalar("duration", duration, iteration)
 
-    def log_validation(self, loss, model, targets, predicts, iteration):
+    def log_validation(self, loss, model, iteration):
         self.add_scalar("validation.loss", loss, iteration)
-
+        '''
         _, spec_predicts, stop_predicts, alignments = predicts
         if len(targets) == 3:
             _, spec_targets, stop_targets  = targets
         else:
             spec_targets, stop_targets  = targets
-
+        '''
         # plot distribution of parameters
         for tag, value in model.named_parameters():
             tag = tag.replace('.', '/')
             self.add_histogram(tag, value.data.cpu().numpy(), iteration)
-
+        '''
         # plot alignment, mel target and predicted, stop_token target and predicted
         idx = random.randint(0, alignments.size(0) - 1)
         self.add_image(
@@ -49,3 +49,4 @@ class TacotronLogger(SummaryWriter):
                 stop_targets[idx].data.cpu().numpy(),
                 stop_predicts[idx].data.cpu().numpy()),
             iteration, dataformats='HWC')
+        '''
