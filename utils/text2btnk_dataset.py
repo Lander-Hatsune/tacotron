@@ -5,16 +5,17 @@ import torch
 
 from text import text_to_sequence
 
-class TextBtnkDataset(torch.utils.data.Dataset):
+
+class TextMelDataset(torch.utils.data.Dataset):
     """
         1) loads filepath,text pairs
         2) normalizes text and converts them to sequences of one-hot vectors
-        3) loads btnk from .npy files
+        3) loads mel-spectrograms from mel files
     """
     def __init__(self, fname, hparams):
-        self.text_cleaners = hparams.text_cleaners
+        self.text_cleaners  = hparams.text_cleaners
         self.symbols_lang = hparams.symbols_lang
-        self.btnk_dim = hparams.btnk_dim
+        self.mel_dim = hparams.mel_dim
         self.f_list = self.files_to_list(fname)
         random.seed(hparams.seed)
         random.shuffle(self.f_list)
@@ -31,15 +32,15 @@ class TextBtnkDataset(torch.utils.data.Dataset):
                 f_list.append([text, path])
         return f_list
 
-    def get_btnk_text_pair(self, text, file_path):
+    def get_mel_text_pair(self, text, file_path):
         text = self.get_text(text)
-        btnk = self.get_btnk(file_path)
-        return (text, btnk)
+        mel = self.get_mel(file_path)
+        return (text, mel)
 
-    def get_btnk(self, file_path):
-        # stored btnk: np.ndarray [shape=(1, T_out, btnk_dim)]
+    def get_mel(self, file_path):
+        #stored melspec: np.ndarray [shape=(T_out, num_mels)]
         btnk = torch.from_numpy(np.load(file_path)['vec']).squeeze()
-        assert btnk.size(1) == self.btnk_dim, (
+        assert btnk.size(1) == self.mel_dim, (
             'Btnk dimension mismatch: given {}, expected {}'.format(btnk.size(1), self.btnk_dim))
 
         return btnk
@@ -49,13 +50,14 @@ class TextBtnkDataset(torch.utils.data.Dataset):
         return text_norm
 
     def __getitem__(self, index):
-        return self.get_btnk_text_pair(*self.f_list[index])
+        print(self.f_list[index][1])
+        return self.get_mel_text_pair(*self.f_list[index])
 
     def __len__(self):
         return len(self.f_list)
-    
 
-class TextBtnkCollate():
+
+class TextMelCollate():
     """ Zero-pads model inputs and targets based on number of frames per step
     """
     def __init__(self, r):
@@ -79,20 +81,23 @@ class TextBtnkCollate():
             text = batch[ids_sorted_decreasing[i]][0]
             text_padded[i, :text.size(0)] = text
 
-        # Right zero-pad btnk
-        num_btnks = batch[0][1].size(1)
+        # Right zero-pad mel-spec
+        num_mels = batch[0][1].size(1)
         max_target_len = max([x[1].size(0) for x in batch])
         if max_target_len % self.r != 0:
             max_target_len += self.r - max_target_len % self.r
             assert max_target_len % self.r == 0
 
-        # include btnk padded
-        btnk_padded = torch.FloatTensor(len(batch), max_target_len, num_btnks)
-        btnk_padded.zero_()
+        # include mel padded and gate padded
+        mel_padded = torch.FloatTensor(len(batch), max_target_len, num_mels)
+        mel_padded.zero_()
+        gate_padded = torch.FloatTensor(len(batch), max_target_len)
+        gate_padded.zero_()
         output_lengths = torch.LongTensor(len(batch))
         for i in range(len(ids_sorted_decreasing)):
-            btnk = batch[ids_sorted_decreasing[i]][1]
-            btnk_padded[i, :btnk.size(0), :] = btnk
-            output_lengths[i] = btnk.size(0)
+            mel = batch[ids_sorted_decreasing[i]][1]
+            mel_padded[i, :mel.size(0), :] = mel
+            gate_padded[i, mel.size(0)-1:] = 1
+            output_lengths[i] = mel.size(0)
 
-        return text_padded, input_lengths, btnk_padded, output_lengths
+        return text_padded, input_lengths, mel_padded, gate_padded, output_lengths

@@ -6,36 +6,52 @@ import json
 import torch
 from torch.utils.data import DataLoader
 
+from model.tacotron import Tacotron, TacotronLoss
 from model.text2btnk import Tacotron2, Tacotron2Loss
-from utils.text2btnk_dataset import TextBtnkDataset, TextBtnkCollate
+from utils.text2btnk_dataset import TextMelDataset, TextMelCollate
 from utils.logger import TacotronLogger
 from utils.utils import data_parallel_workaround
 from hparams import create_hparams
 
-
 def prepare_datasets(hparams):
     # Get data, data loaders and collate function ready
-    trainset = TextBtnkDataset(hparams.training_files, hparams)
-    valset = TextBtnkDataset(hparams.validation_files, hparams)
-    collate_fn = TextBtnkCollate(hparams.r)
+    trainset = TextMelDataset(hparams.training_files, hparams)
+    valset = TextMelDataset(hparams.validation_files, hparams)
+    collate_fn = TextMelCollate(hparams.r)
     #
     return trainset, valset, collate_fn
-
 
 def create_model(hparams):
     # Model config
     with open(hparams.tacotron_config, 'r') as f:
         model_cfg = json.load(f)
-    # Tacotron2 model
-    model = Tacotron2(n_vocab=hparams.num_symbols,
-                      embed_dim=hparams.symbols_embed_dim,
-                      mel_dim=hparams.mel_dim,
-                      max_decoder_steps=hparams.max_decoder_steps,
-                      stop_threshold=hparams.stop_threshold,
-                      r=hparams.r,
-                      model_cfg=model_cfg)
-    # Loss criterion
-    criterion = Tacotron2Loss()
+    if hparams.tacotron_version == "1":
+        # Tacotron model
+        model = Tacotron(n_vocab=hparams.num_symbols,
+                         embed_dim=hparams.symbols_embed_dim,
+                         mel_dim=hparams.mel_dim,
+                         linear_dim=hparams.mel_dim,
+                         max_decoder_steps=hparams.max_decoder_steps,
+                         stop_threshold=hparams.stop_threshold,
+                         r=hparams.r,
+                         model_cfg=model_cfg
+                         )
+        # Loss criterion
+        criterion = TacotronLoss()
+    elif hparams.tacotron_version == "2":
+        # Tacotron2 model
+        model = Tacotron2(n_vocab=hparams.num_symbols,
+                          embed_dim=hparams.symbols_embed_dim,
+                          mel_dim=hparams.mel_dim,
+                          max_decoder_steps=hparams.max_decoder_steps,
+                          stop_threshold=hparams.stop_threshold,
+                          r=hparams.r,
+                          model_cfg=model_cfg
+                          )
+        # Loss criterion
+        criterion = Tacotron2Loss()
+    else:
+        raise ValueError("Unsupported Tacotron version: {} ".format(hparams.tacotron_version))
     #
     return model, criterion
 
@@ -84,13 +100,16 @@ def validate(model, criterion, iteration, device, valset, batch_size, collate_fn
     model.eval()
     with torch.no_grad():
         valdata_loader = DataLoader(valset, sampler=None, num_workers=1,
-                                    shuffle=False, batch_size=batch_size,
-                                    pin_memory=False, collate_fn=collate_fn)
+                                shuffle=False, batch_size=1,
+                                pin_memory=False, collate_fn=collate_fn)
 
         val_loss = 0.0
         for i, batch in enumerate(valdata_loader):
             inputs, targets = model.parse_data_batch(batch)
             predicts = model(inputs)
+
+            print(predicts[1].shape)
+            # np.save(f'{valset.f_list[i][1][:-4]}.npy', predicts[1])
 
             # Loss
             loss = criterion(predicts, targets)
@@ -100,7 +119,7 @@ def validate(model, criterion, iteration, device, valset, batch_size, collate_fn
 
     model.train()
     print("Validation loss {}: {:9f}  ".format(iteration, val_loss))
-    logger.log_validation(val_loss, model, iteration)
+    logger.log_validation(val_loss, model, targets, predicts, iteration)
 
 
 def train(output_dir, log_dir, checkpoint_path, warm_start, hparams):
